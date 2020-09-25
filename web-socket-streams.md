@@ -3,6 +3,7 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [General WSS information](#general-wss-information)
+  - [Websocket Limits](#websocket-limits)
   - [Live Subscribing/Unsubscribing to streams](#live-subscribingunsubscribing-to-streams)
     - [Subscribe to a stream](#subscribe-to-a-stream)
     - [Unsubscribe to a stream](#unsubscribe-to-a-stream)
@@ -35,6 +36,14 @@
 * All symbols for streams are **lowercase**
 * A single connection to **stream.binance.com** is only valid for 24 hours; expect to be disconnected at the 24 hour mark
 * The websocket server will send a `ping frame` every 3 minutes. If the websocket server does not receive a `pong frame` back from the connection within a 10 minute period, the connection will be disconnected. Unsolicited `pong frames` are allowed.
+
+## Websocket Limits
+* WebSocket connections have a limit of 5 incoming messages per second. A message is considered:
+    * A PING frame
+    * A PONG frame
+    * A JSON controlled message (e.g. subscribe, unsubscribe)
+* A connection that goes beyond the limit will be disconnected; IPs that are repeatedly disconnected may be banned.
+* A single connection can listen to a maximum of 1024 streams.
 
 ## Live Subscribing/Unsubscribing to streams
 
@@ -105,7 +114,7 @@
 
 
 ### Setting Properties
-Currently, the only property can be set is to set whether `combined` stream payloads are enabled are not.
+Currently, the only property that can be set is whether `combined` stream payloads are enabled or not.
 The combined property is set to `false` when connecting using `/ws/` ("raw streams") and `true` when connecting using `/stream/`.
 
 * Request
@@ -152,7 +161,7 @@ The combined property is set to `false` when connecting using `/ws/` ("raw strea
 
 Error Message | Description
 ---|---
-{"code": 0, "msg": "Unknown property"} | Parameter used in the `SET_PROPERTY` or `GET_PROPERTY` was invalid
+{"code": 0, "msg": "Unknown property","id": %s} | Parameter used in the `SET_PROPERTY` or `GET_PROPERTY` was invalid
 {"code": 1, "msg": "Invalid value type: expected Boolean"} | Value should only be `true` or `false`
 {"code": 2, "msg": "Invalid request: property name must be a string"}| Property name provided was invalid
 {"code": 2, "msg": "Invalid request: request ID must be an unsigned integer"}| Parameter `id` had to be provided or the value provided in the `id` parameter is an unsupported type

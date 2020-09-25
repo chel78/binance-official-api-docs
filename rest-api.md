@@ -198,7 +198,7 @@ server.
 
 
 ## SIGNED Endpoint Examples for POST /api/v3/order
-Here is a step-by-step example of how to send a vaild signed payload from the
+Here is a step-by-step example of how to send a valid signed payload from the
 Linux command line using `echo`, `openssl`, and `curl`.
 
 Key | Value
@@ -274,9 +274,12 @@ Note that the signature is different in example 3.
 There is no & between "GTC" and "quantity=1".
 
 # Public API Endpoints
-## Terminology
-* `base asset` refers to the asset that is the `quantity` of a symbol.
-* `quote asset` refers to the asset that is the `price` of a symbol.
+### Terminology
+
+These terms will be used throughout the documentation, so it is recommended especially for new users to read to help their understanding of the API.
+
+* `base asset` refers to the asset that is the `quantity` of a symbol. For the symbol BTCUSDT, BTC would be the `base asset`.
+* `quote asset` refers to the asset that is the `price` of a symbol. For the symbol BTCUSDT, USDT would be the `quote asset`.
 
 
 ## ENUM definitions
@@ -296,28 +299,38 @@ There is no & between "GTC" and "quantity=1".
 
 **Order status (status):**
 
-* NEW - The order has been accepted by the engine.
-* PARTIALLY_FILLED - A part of the order has been filled.
-* FILLED - The order has been completely filled.
-* CANCELED - The order has been canceled by the user.
-* PENDING_CANCEL (currently unused)
-* REJECTED - The order was not accepted by the engine and not processed.
-* EXPIRED - The order was canceled according to the order type's rules (e.g. LIMIT FOK orders with no fill, LIMIT IOC or MARKET orders that partially fill) or by the exchange, (e.g. orders canceled during liquidation, orders canceled during maintenance)
+Status | Description
+-----------| --------------
+`NEW` | The order has been accepted by the engine.
+`PARTIALLY_FILLED`| A part of the order has been filled.
+`FILLED` | The order has been completed.
+`CANCELED` | The order has been canceled by the user.
+` PENDING_CANCEL` | Currently unused
+`REJECTED`       | The order was not accepted by the engine and not processed.
+`EXPIRED` | The order was canceled according to the order type's rules (e.g. LIMIT FOK orders with no fill, LIMIT IOC or MARKET orders that partially fill) <br> or by the exchange, (e.g. orders canceled during liquidation, orders canceled during maintenance)
 
 **OCO Status (listStatusType):**
-* RESPONSE
-* EXEC_STARTED
-* ALL_DONE
+
+Status | Description
+-----------| --------------
+`RESPONSE` | This is used when the ListStatus is responding to a failed action. (E.g. Orderlist placement or cancellation)
+`EXEC_STARTED`| The order list has been placed or there is an update to the order list status.
+`ALL_DONE` | The order list has finished executing and thus no longer active.
 
 **OCO Order Status (listOrderStatus):**
-* EXECUTING
-* ALL_DONE
-* REJECT
+
+Status | Description
+-----------| --------------
+`EXECUTING` | Either an order list has been placed or there is an update to the status of the list.
+`ALL_DONE`| An order list has completed execution and thus no longer active. 
+`REJECT` | The List Status is responding to a failed action either during order placement or order canceled
 
 **ContingencyType**
 * OCO
 
 **Order types (orderTypes, type):**
+
+More information on how the order types definitions can be found here: [Types of Orders](https://www.binance.com/en/support/articles/360033779452-Types-of-Order)
 
 * LIMIT
 * MARKET
@@ -327,6 +340,12 @@ There is no & between "GTC" and "quantity=1".
 * TAKE_PROFIT_LIMIT
 * LIMIT_MAKER
 
+**Order Response Type (newOrderRespType):**
+
+* ACK
+* RESULT
+* FULL
+
 **Order side (side):**
 
 * BUY
@@ -334,9 +353,13 @@ There is no & between "GTC" and "quantity=1".
 
 **Time in force (timeInForce):**
 
-* GTC
-* IOC
-* FOK
+This sets how long an order will be active before expiration.
+
+Status | Description
+-----------| --------------
+`GTC` | Good Til Canceled <br> An order will be on the book unless the order is canceled. 
+`IOC` | Immediate Or Cancel <br> An order will try to fill the order as much as it can before the order expires.
+`FOK`| Fill or Kill <br> An order will expire if the full order cannot be filled upon execution.
 
 **Kline/Candlestick chart intervals:**
 
@@ -610,8 +633,7 @@ fromId | LONG | NO | TradeId to fetch from. Default gets most recent trades.
 ```
 GET /api/v3/aggTrades
 ```
-Get compressed, aggregate trades. Trades that fill at the time, from the same
-order, with the same price will have the quantity aggregated.
+Get compressed, aggregate trades. Trades that fill at the time, from the same taker order, with the same price will have the quantity aggregated.
 
 **Weight:**
 1
@@ -887,35 +909,30 @@ timeInForce | ENUM | NO |
 quantity | DECIMAL | NO |
 quoteOrderQty|DECIMAL|NO|
 price | DECIMAL | NO |
-newClientOrderId | STRING | NO | A unique id for the order. Automatically generated if not sent.
+newClientOrderId | STRING | NO | A unique id among open orders. Automatically generated if not sent.<br> Orders with the same `newClientOrderID` can be accepted only when the previous one is filled, otherwise the order will be rejected.
 stopPrice | DECIMAL | NO | Used with `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`, and `TAKE_PROFIT_LIMIT` orders.
 icebergQty | DECIMAL | NO | Used with `LIMIT`, `STOP_LOSS_LIMIT`, and `TAKE_PROFIT_LIMIT` to create an iceberg order.
 newOrderRespType | ENUM | NO | Set the response JSON. `ACK`, `RESULT`, or `FULL`; `MARKET` and `LIMIT` order types default to `FULL`, all other orders default to `ACK`.
-recvWindow | LONG | NO | The value cannot be greater than ```60000```
+recvWindow | LONG | NO |The value cannot be greater than ```60000```
 timestamp | LONG | YES |
 
-Additional mandatory parameters based on `type`:
+Some additional mandatory parameters based on order `type`:
 
-Type | Additional mandatory parameters
------------- | ------------
-`LIMIT` | `timeInForce`, `quantity`, `price`
-`MARKET` | `quantity` or `quoteOrderQty`
-`STOP_LOSS` | `quantity`, `stopPrice`
-`STOP_LOSS_LIMIT` | `timeInForce`, `quantity`,  `price`, `stopPrice`
-`TAKE_PROFIT` | `quantity`, `stopPrice`
-`TAKE_PROFIT_LIMIT` | `timeInForce`, `quantity`, `price`, `stopPrice`
-`LIMIT_MAKER` | `quantity`, `price`
+Type | Additional mandatory parameters | Additional Information
+------------ | ------------| ------
+`LIMIT` | `timeInForce`, `quantity`, `price`| 
+`MARKET` | `quantity` or `quoteOrderQty`| `MARKET` orders using the `quantity` field specifies the amount of the `base asset` the user wants to buy or sell at the market price. <br> E.g. MARKET order on BTCUSDT will specify how much BTC the user is buying or selling. <br><br> `MARKET` orders using `quoteOrderQty` specifies the amount the user wants to spend (when buying) or receive (when selling) the `quote` asset; the correct `quantity` will be determined based on the market liquidity and `quoteOrderQty`. <br> E.g. Using the symbol BTCUSDT: <br> `BUY` side, the order will buy as many BTC as `quoteOrderQty` USDT can. <br> `SELL` side, the order will sell as much BTC needed to receive `quoteOrderQty` USDT.
+`STOP_LOSS` | `quantity`, `stopPrice`| This will execute a `MARKET` order when the `stopPrice` is reached.
+`STOP_LOSS_LIMIT` | `timeInForce`, `quantity`,  `price`, `stopPrice` 
+`TAKE_PROFIT` | `quantity`, `stopPrice`| This will execute a `MARKET` order when the `stopPrice` is reached.
+`TAKE_PROFIT_LIMIT` | `timeInForce`, `quantity`, `price`, `stopPrice` | 
+`LIMIT_MAKER` | `quantity`, `price`| This is a `LIMIT` order that will be rejected if the order immediately matches and trades as a taker. <br> This is also known as a POST-ONLY order. 
 
 Other info:
 
-* `LIMIT_MAKER` are `LIMIT` orders that will be rejected if they would immediately match and trade as a taker.
-* `STOP_LOSS` and `TAKE_PROFIT` will execute a `MARKET` order when the `stopPrice` is reached.
 * Any `LIMIT` or `LIMIT_MAKER` type order can be made an iceberg order by sending an `icebergQty`.
 * Any order with an `icebergQty` MUST have `timeInForce` set to `GTC`.
-* `MARKET` orders using `quantity` specifies how much a user wants to buy or sell based on the market price.
-* `MARKET` orders using `quoteOrderQty` specifies the amount the user wants to spend (when buying) or receive (when selling) of the quote asset; the correct `quantity` will be determined based on the market liquidity and `quoteOrderQty`.
 * `MARKET` orders using `quoteOrderQty` will not break `LOT_SIZE` filter rules; the order will execute a `quantity` that will have the notional value as close as possible to `quoteOrderQty`.
-
 Trigger order price rules against market price for both MARKET and LIMIT versions:
 
 * Price above market price: `STOP_LOSS` `BUY`, `TAKE_PROFIT` `SELL`
@@ -1353,7 +1370,8 @@ Additional Info:
 * Quantity Restrictions:
     * Both legs must have the same quantity.
     * ```ICEBERG``` quantities however do not have to be the same
-
+* Order Rate Limit
+    * `OCO` counts as 2 orders against the order rate limit. 
 
 **Response:**
 
@@ -1940,7 +1958,7 @@ Note that both "algo" orders and normal orders are counted for this filter.
 ```javascript
 {
   "filterType": "MAX_NUM_ORDERS",
-  "limit": 25
+  "maxNumOrders": 25
 }
 ```
 

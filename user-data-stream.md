@@ -14,7 +14,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# User Data Streams for Binance (2020-04-25)
+# User Data Streams for Binance (2020-09-09)
 # General WSS information
 * The base API endpoint is: **https://api.binance.com**
 * A User Data Stream `listenKey` is valid for 60 minutes after creation.
@@ -87,9 +87,30 @@ listenKey | STRING | YES
 
 # Web Socket Payloads
 ## Account Update
-Account state is updated with the `outboundAccountInfo` event.
 
-**Payload:**
+`outboundAccountPosition` is sent any time an account balance has changed and contains the assets that were possibly changed by the event that generated the balance change.
+
+```javascript
+{
+  "e": "outboundAccountPosition", //Event type
+  "E": 1564034571105,             //Event Time
+  "u": 1564034571073,             //Time of last account update
+  "B": [                          //Balances Array
+    {
+      "a": "ETH",                 //Asset
+      "f": "10000.000000",        //Free
+      "l": "0.000000"             //Locked
+    }
+  ]
+}
+```
+
+**IMPORTANT NOTE: `outboundAccountInfo` has been deprecated and will be removed in the future. <br> It is recommended to use `outboundAccountPosition` instead.**
+
+`outboundAccountInfo` shows the balance of non-zero assets and any asset that has recently been reduced to 0. <br>
+For assets recently reduced to 0, they will only be pushed once to notify the user has a zero balance for that asset and will not be pushed again. <br>
+Any asset that is not included in the `outboundAccountInfo` should be considered having a balance of 0.
+
 ```javascript
 {
   "e": "outboundAccountInfo",   // Event type
@@ -119,8 +140,8 @@ Account state is updated with the `outboundAccountInfo` event.
       "l": "0.00000000"
     },
     {
-      "a": "BNC",
-      "f": "1114503.29769312",
+      "a": "BNB",
+      "f": "4503.29769312",
       "l": "0.00000000"
     },
     {
@@ -129,26 +150,9 @@ Account state is updated with the `outboundAccountInfo` event.
       "l": "0.00000000"
     }
   ],
-  "P": [                       // Account Permissions
-        "SPOT"
+  "P": [
+    "SPOT"
   ]  
-}
-```
-
-An additional event `outboundAccountPosition` is sent any time an account balance has changed and contains the assets that were possibly changed by the event that generated the balance change.
-
-```javascript
-{
-  "e": "outboundAccountPosition", //Event type
-  "E": 1564034571105,             //Event Time
-  "u": 1564034571073,             //Time of last account update
-  "B": [                          //Balances Array
-    {
-      "a": "ETH",                 //Asset
-      "f": "10000.000000",        //Free
-      "l": "0.000000"             //Locked
-    }
-  ]
 }
 ```
 
@@ -209,7 +213,7 @@ Average price can be found by doing `Z` divided by `z`.
   "M": false,                    // Ignore
   "O": 1499405658657,            // Order creation time
   "Z": "0.00000000",             // Cumulative quote asset transacted quantity
-  "Y": "0.00000000"              // Last quote asset transacted quantity (i.e. lastPrice * lastQty),
+  "Y": "0.00000000",              // Last quote asset transacted quantity (i.e. lastPrice * lastQty)
   "Q": "0.00000000"              // Quote Order Qty
 }
 ```
@@ -252,4 +256,3 @@ If the order is an OCO, an event will be displayed named `ListStatus` in additio
   ]
 }
 ```
-

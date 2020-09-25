@@ -1,4 +1,4 @@
-# Websocket账户接口 (2018-11-13)
+# Websocket账户接口 (2020-09-09)
 
 # 基本信息
 * 本篇所列出REST接口的baseurl **https://api.binance.com**
@@ -31,7 +31,7 @@ NONE
 }
 ```
 
-## 延长lisenKey有效期
+## 延长listenKey有效期
 ```
 PUT /api/v1/userDataStream
 ```
@@ -74,18 +74,42 @@ listenKey | STRING | YES
 # websocket推送事件
 
 ## 账户更新
-账户更新事件的 event type 固定为 `outboundAccountInfo`
-当账户信息有变动时，会推送此事件
 
-**Payload:**
+每当帐户余额发生更改时，都会发送一个事件`outboundAccountPosition`，其中包含可能由生成余额变动的事件而变动的资产。
+
+**Payload**
+
+```javascript
+{
+  "e": "outboundAccountPosition", // 事件类型
+  "E": 1564034571105,             // 事件时间
+  "u": 1564034571073,             // 账户末次更新时间戳
+  "B": [                          // 余额
+    {
+      "a": "ETH",                 // 资产名称
+      "f": "10000.000000",        // 可用余额
+      "l": "0.000000"             // 冻结余额
+    }
+  ]
+}
+```
+
+**重要通知: `outboundAccountInfo` 事件不再推荐使用，以后可能会被删除。 <br> 推荐使用 `outboundAccountPosition` 事件.**
+
+`outboundAccountInfo`只推送余额不为0，以及余额刚变成0的资产。<br />
+对于余额刚变成0的资产，只会被推送一次，后面如果此资产还是0，不会再推送。<br>
+任何没有出现在`outboundAccountInfo`消息中的资产，应该被考虑为余额是0.
+
+**Payload**
+
 ```javascript
 {
   "e": "outboundAccountInfo",   // 事件类型
   "E": 1499405658849,           // 事件时间
-  "m": 0,                       // 挂单费率
-  "t": 0,                       // 吃单费率
-  "b": 0,                       // 买单费率(请忽略此字段)
-  "s": 0,                       // 卖单费率(请忽略此字段)
+  "m": 0,                       // 挂单费率 (基点)
+  "t": 0,                       // 吃单费率 (基点)
+  "b": 0,                       // 买单费率(基点)
+  "s": 0,                       // 卖单费率(基点)
   "T": true,                    // 是否允许交易
   "W": true,                    // 是否允许提现
   "D": true,                    // 是否允许充值
@@ -110,15 +134,14 @@ listenKey | STRING | YES
       "a": "BNC",
       "f": "1114503.29769312",
       "l": "0.00000000"
-    },
-    {
-      "a": "NEO",
-      "f": "0.00000000",
-      "l": "0.00000000"
     }
+  ],
+  "P": [                        // 权限
+    "SPOT"
   ]
 }
 ```
+
 
 ## 订单/交易 更新
 当有新订单创建、订单有新成交或者新的状态变化时会推送此类事件
@@ -173,5 +196,3 @@ event type统一为 `executionReport`
 * REJECTED 新订单被拒绝
 * TRADE 订单有新成交
 * EXPIRED 订单失效（根据订单的Time In Force参数）
-
-
